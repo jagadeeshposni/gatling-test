@@ -1,0 +1,50 @@
+plugins {
+	id 'org.springframework.boot' version '2.1.6.RELEASE'
+	id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'scala'
+
+group = 'com.posni.gatling'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testCompile('io.gatling.highcharts:gatling-charts-highcharts:3.0.0')
+	compile group: 'org.projectlombok', name: 'lombok', version: '1.16.20'
+//	compile ('org.apache.kafka:kafka-clients:0.10.2.0')
+
+
+}
+
+/**
+ * Gatling load tests
+ */
+task testLoad(type: JavaExec) {
+	description = 'Test load the Spring Boot web service with Gatling'
+	group = 'Load Test'
+	classpath = sourceSets.test.runtimeClasspath
+	jvmArgs = [
+			// workaround for https://github.com/gatling/gatling/issues/2689
+			"-Dgatling.core.directory.binaries=${sourceSets.test.output.classesDirs.toString()}",
+			"-Dlogback.configurationFile=${logbackGatlingConfig()}"
+	]
+	main = 'io.gatling.app.Gatling'
+	args = [
+			'--simulation', 'gatling.simulation.Mysimulation',
+			'--results-folder', "${buildDir}/gatling-results",
+			'--binaries-folder', sourceSets.test.output.classesDirs.toString() // ignored because of above bug
+	]
+}
+
+def logbackGatlingConfig() {
+	return sourceSets.test.resources.find { it.name == 'logback-gatling.xml'};
+}
